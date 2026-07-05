@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.db import models
 
+from apps.constants import PROJECT_STATUS_CLOSED, PROJECT_STATUS_OPEN
+
 
 class Project(models.Model):
     STATUS_CHOICES = [
-        ("open", "Открыт"),
-        ("closed", "Закрыт"),
+        (PROJECT_STATUS_OPEN, "Открыт"),
+        (PROJECT_STATUS_CLOSED, "Закрыт"),
     ]
 
     owner = models.ForeignKey(
@@ -17,7 +19,9 @@ class Project(models.Model):
     name = models.CharField("Название", max_length=200)
     description = models.TextField("Описание", blank=True)
     github_url = models.URLField("Ссылка на GitHub", blank=True)
-    status = models.CharField("Статус", max_length=6, choices=STATUS_CHOICES, default="open")
+    status = models.CharField(
+        "Статус", max_length=6, choices=STATUS_CHOICES, default=PROJECT_STATUS_OPEN
+    )
     created_at = models.DateTimeField("Дата публикации", auto_now_add=True)
 
     participants = models.ManyToManyField(

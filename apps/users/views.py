@@ -6,36 +6,29 @@ from django.contrib.auth.views import update_session_auth_hash
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
+from apps.constants import PAGE_SIZE
 from .forms import LoginForm, ProfileEditForm, RegisterForm
 from .models import User
-
-PAGE_SIZE = 12
 
 
 def register(request):
     if request.user.is_authenticated:
         return redirect("projects:list")
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            auth_login(request, user)
-            return redirect("projects:list")
-    else:
-        form = RegisterForm()
+    form = RegisterForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        auth_login(request, user)
+        return redirect("projects:list")
     return render(request, "users/register.html", {"form": form})
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("projects:list")
-    if request.method == "POST":
-        form = LoginForm(request.POST, request=request)
-        if form.is_valid():
-            auth_login(request, form.get_user())
-            return redirect("projects:list")
-    else:
-        form = LoginForm()
+    form = LoginForm(request.POST or None, request=request)
+    if request.method == "POST" and form.is_valid():
+        auth_login(request, form.get_user())
+        return redirect("projects:list")
     return render(request, "users/login.html", {"form": form})
 
 
@@ -54,28 +47,22 @@ def user_detail(request, pk):
 
 @login_required
 def edit_profile(request):
-    if request.method == "POST":
-        form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Профиль обновлён")
-            return redirect("users:detail", pk=request.user.pk)
-    else:
-        form = ProfileEditForm(instance=request.user)
+    form = ProfileEditForm(request.POST or None, request.FILES or None, instance=request.user)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Профиль обновлён")
+        return redirect("users:detail", pk=request.user.pk)
     return render(request, "users/edit_profile.html", {"form": form})
 
 
 @login_required
 def change_password(request):
-    if request.method == "POST":
-        form = PasswordChangeForm(user=request.user, data=request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
-            messages.success(request, "Пароль изменён")
-            return redirect("users:detail", pk=request.user.pk)
-    else:
-        form = PasswordChangeForm(user=request.user)
+    form = PasswordChangeForm(user=request.user, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Пароль изменён")
+        return redirect("users:detail", pk=request.user.pk)
     return render(request, "users/change_password.html", {"form": form})
 
 

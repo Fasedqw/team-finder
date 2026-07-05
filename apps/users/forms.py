@@ -3,6 +3,7 @@ import re
 from django import forms
 from django.contrib.auth import authenticate
 
+from apps.constants import GITHUB_DOMAIN, PHONE_REGEX
 from .models import User
 
 
@@ -11,6 +12,12 @@ def normalize_phone(phone):
     if phone.startswith("8") and len(phone) == 11:
         phone = "+7" + phone[1:]
     return phone
+
+
+def validate_github_url(url):
+    if url and GITHUB_DOMAIN not in url:
+        raise forms.ValidationError("Ссылка должна вести на github.com")
+    return url
 
 
 class RegisterForm(forms.ModelForm):
@@ -85,7 +92,7 @@ class ProfileEditForm(forms.ModelForm):
         if not phone:
             return phone
         normalized = normalize_phone(phone)
-        if not re.match(r"^\+7\d{10}$", normalized):
+        if not re.match(PHONE_REGEX, normalized):
             raise forms.ValidationError("Формат: 8XXXXXXXXXX или +7XXXXXXXXXX")
         qs = User.objects.filter(phone=normalized)
         if self.instance and self.instance.pk:
@@ -95,7 +102,4 @@ class ProfileEditForm(forms.ModelForm):
         return normalized
 
     def clean_github_url(self):
-        url = self.cleaned_data.get("github_url", "").strip()
-        if url and "github.com" not in url:
-            raise forms.ValidationError("Ссылка должна вести на github.com")
-        return url
+        return validate_github_url(self.cleaned_data.get("github_url", "").strip())

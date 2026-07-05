@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -5,10 +7,9 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from apps.constants import PAGE_SIZE, PROJECT_STATUS_CLOSED, PROJECT_STATUS_OPEN
 from .forms import ProjectForm
 from .models import Project
-
-PAGE_SIZE = 12
 
 
 def project_list(request):
@@ -30,17 +31,14 @@ def project_detail(request, pk):
 
 @login_required
 def create_project(request):
-    if request.method == "POST":
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.owner = request.user
-            project.save()
-            project.participants.add(request.user)
-            messages.success(request, "Проект опубликован")
-            return redirect("projects:detail", pk=project.pk)
-    else:
-        form = ProjectForm(initial={"status": "open"})
+    form = ProjectForm(request.POST or None, initial={"status": PROJECT_STATUS_OPEN})
+    if request.method == "POST" and form.is_valid():
+        project = form.save(commit=False)
+        project.owner = request.user
+        project.save()
+        project.participants.add(request.user)
+        messages.success(request, "Проект опубликован")
+        return redirect("projects:detail", pk=project.pk)
     return render(request, "projects/create-project.html", {"form": form, "is_edit": False})
 
 
@@ -49,14 +47,11 @@ def edit_project(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if project.owner_id != request.user.id and not request.user.is_staff:
         return HttpResponseForbidden()
-    if request.method == "POST":
-        form = ProjectForm(request.POST, instance=project)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Изменения сохранены")
-            return redirect("projects:detail", pk=project.pk)
-    else:
-        form = ProjectForm(instance=project)
+    form = ProjectForm(request.POST or None, instance=project)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Изменения сохранены")
+        return redirect("projects:detail", pk=project.pk)
     return render(request, "projects/create-project.html", {
         "form": form, "is_edit": True, "project": project,
     })
@@ -97,7 +92,7 @@ def toggle_favorite(request, pk):
 def toggle_participate(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if project.owner_id == request.user.id:
-        return JsonResponse({"status": "error"}, status=400)
+        return JsonResponse({"status": "error"}, status=HTTPStatus.BAD_REQUEST)
     if request.user in project.participants.all():
         project.participants.remove(request.user)
         participant = False
@@ -112,9 +107,12 @@ def toggle_participate(request, pk):
 def complete_project(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if project.owner_id != request.user.id and not request.user.is_staff:
-        return JsonResponse({"status": "error"}, status=403)
-    if project.status != "open":
-        return JsonResponse({"status": "error", "message": "Проект уже закрыт"}, status=400)
-    project.status = "closed"
+        return JsonResponse({"status": "error"}, status=HTTPStatus.FORBIDDEN)
+    if project.status != PROJECT_STATUS_OPEN:
+        return JsonResponse(
+            {"status": "error", "message": "Проект уже закрыт"},
+            status=HTTPStatus.BAD_REQUEST,
+        )
+    project.status = PROJECT_STATUS_CLOSED
     project.save(update_fields=["status"])
-    return JsonResponse({"status": "ok", "project_status": "closed"})
+    return JsonResponse({"status": "ok", "project_status": PROJECT_STATUS_CLOSED})

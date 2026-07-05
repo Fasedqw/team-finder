@@ -43,7 +43,7 @@ class ProjectTest(TestCase):
 
     def test_edit_project_ok(self):
         self.client.login(email="owner@mail.ru", password="pass12345")
-        self.client.post(reverse("projects:edit", args=[self.project.pk]), {
+        response = self.client.post(reverse("projects:edit", args=[self.project.pk]), {
             "name": "Обновлено", "description": "", "github_url": "", "status": "open",
         })
         self.project.refresh_from_db()
