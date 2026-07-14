@@ -20,7 +20,10 @@ class Project(models.Model):
     description = models.TextField("Описание", blank=True)
     github_url = models.URLField("Ссылка на GitHub", blank=True)
     status = models.CharField(
-        "Статус", max_length=6, choices=STATUS_CHOICES, default=PROJECT_STATUS_OPEN
+        "Статус",
+        max_length=max(len(s) for s, _ in STATUS_CHOICES),
+        choices=STATUS_CHOICES,
+        default=PROJECT_STATUS_OPEN,
     )
     created_at = models.DateTimeField("Дата публикации", auto_now_add=True)
 

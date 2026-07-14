@@ -55,7 +55,6 @@ docker compose up -d
 ### 5. Применить миграции и загрузить тестовые данные
 
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 python manage.py seed_demo_data
 python manage.py createsuperuser
@@ -67,7 +66,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Сайт доступен на http://127.0.0.1:8000
+Сайт доступен на [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ## Тестовые аккаунты
 
@@ -98,3 +97,7 @@ python manage.py test
 - Редактирование профиля (аватар, контакты, GitHub)
 - Смена пароля
 - Админка с блокировкой/разблокировкой пользователей (`/admin/`)
+
+## Автор
+
+Бердников Константин Алексеевич — [github.com/Fasedqw](https://github.com/Fasedqw)

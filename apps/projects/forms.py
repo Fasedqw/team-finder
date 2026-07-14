@@ -1,7 +1,7 @@
 from django import forms
 
 from apps.constants import GITHUB_DOMAIN
-from apps.users.forms import validate_github_url
+from apps.utils import validate_github_url
 from .models import Project
 
 
